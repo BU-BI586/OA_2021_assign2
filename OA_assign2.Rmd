@@ -1,0 +1,94 @@
+---
+title: "Untitled"
+author: "Olivia Nieves"
+date: "3/23/2021"
+output: html_document
+---
+Set your working directory
+```{r}
+setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2") 
+```
+
+Library the necessary packages
+```{r}
+library(DESeq2) 
+library(affycoretools)
+library(arrayQualityMetrics)
+library(genefilter)
+library(Biobase)
+library(ggplot2)
+library(dplyr)
+library(pheatmap)
+library(vegan)
+library(ggrepel)
+library(tidyverse)
+```
+
+Read in counts
+```{r}
+countData <- read.table("1.Assign2_GE_Sym_OA.txt")
+head(countData)
+length(countData[,1])
+names(countData)=c( "Control_1","P2553_1","P2553_2","Control_2")
+row.names(countData)=sub("", "isogroup", rownames(countData))
+head(countData)
+gg=read.table("davies_cladeC_iso2gene.tab.txt",sep="\t",quote="", row.names=1)
+```
+
+Look for outliers. NOTE: no outliers found in our data set
+```{r}
+setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2/outlier")
+treat=c( "Control_1","P2553_1","P2553_2","Control_2")
+g=data.frame(treat)
+g
+colData= g
+
+dds=DESeqDataSetFromMatrix(countData=countData, colData=g, design=~treat)
+
+vsd.ge=assay(vst(dds))
+rl=vst(dds)
+e=ExpressionSet(assay(rl), AnnotatedDataFrame(as.data.frame(colData(rl))))
+arrayQualityMetrics(e,intgroup=c("treat"),force=T)
+```
+
+Re-read in counts
+```{r}
+setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2")
+countData <- read.table("1.Assign2_GE_Sym_OA.txt")
+head(countData)
+length(countData[,1])
+names(countData)=c( "Control_1","P2553_1","P2553_2","Control_2")
+row.names(countData)=sub("", "isogroup", rownames(countData))
+head(countData)
+gg=read.table("davies_cladeC_iso2gene.tab.txt",sep="\t",quote="", row.names=1)
+```
+
+Plot counts
+```{r}
+totalCounts=colSums(countData)
+totalCounts
+barplot(totalCounts, col=c("coral", "blue", "blue", "coral"), ylab="raw counts")
+```
+
+How our data varies by treatment
+```{r}
+treat=c( "Control_1","P2553_1","P2553_2","Control_2")
+g=data.frame(treat)
+g
+colData<- g
+
+dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat) 
+```
+
+DESeq analysis
+```{r}
+dds<-DESeq(dds, modelMatrixType=TRUE)
+head(dds)
+res<- results(dds)
+```
+
+Look at dispersions plot
+```{r}
+plotDispEsts(dds, main="Dispersion plot")
+```
+
