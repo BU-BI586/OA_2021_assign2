@@ -24,63 +24,7 @@ library(ggrepel)
 library(tidyverse)
 ```
 
-Read in counts
-```{r}
-countData <- read.table("1.Assign2_GE_Sym_OA.txt")
-head(countData)
-length(countData[,1])
-names(countData)=c( "Control_1","P2553_1","P2553_2","Control_2")
-row.names(countData)=sub("", "isogroup", rownames(countData))
-head(countData)
-gg=read.table("davies_cladeC_iso2gene.tab.txt",sep="\t",quote="", row.names=1)
-```
-
-Look for outliers. NOTE: no outliers found in our data set
-```{r}
-setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2/outlier")
-treat=c( "Control_1","P2553_1","P2553_2","Control_2")
-g=data.frame(treat)
-g
-colData= g
-
-dds=DESeqDataSetFromMatrix(countData=countData, colData=g, design=~treat)
-
-vsd.ge=assay(vst(dds))
-rl=vst(dds)
-e=ExpressionSet(assay(rl), AnnotatedDataFrame(as.data.frame(colData(rl))))
-arrayQualityMetrics(e,intgroup=c("treat"),force=T)
-```
-
-Re-read in counts
-```{r}
-setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2")
-countData <- read.table("1.Assign2_GE_Sym_OA.txt")
-head(countData)
-length(countData[,1])
-names(countData)=c( "Control_1","P2553_1","P2553_2","Control_2")
-row.names(countData)=sub("", "isogroup", rownames(countData))
-head(countData)
-gg=read.table("davies_cladeC_iso2gene.tab.txt",sep="\t",quote="", row.names=1)
-```
-
-Plot counts
-```{r}
-totalCounts=colSums(countData)
-totalCounts
-barplot(totalCounts, col=c("coral", "blue", "blue", "coral"), ylab="raw counts")
-```
-
-How our data varies by treatment
-```{r}
-treat=c( "Control_1","P2553_1","P2553_2","Control_2")
-g=data.frame(treat)
-g
-colData<- g
-
-dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat) 
-```
-
-DESeq analysis
+Look for outliers. First, read in counts then create arrayQualityMetrics report and check HTML export file for outliers. NOTE: no outliers found in our data set.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
 head(countData)
@@ -88,6 +32,39 @@ row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
 #41850
+treat=c( "Control_1", "P2553_1", "P2553_2", "Control_2")
+g=data.frame(treat)
+g
+colData<- g
+
+dds<-DESeqDataSetFromMatrix(countData=countData, colData=g, design=~treat)
+
+vsd.ge=assay(vst(dds))
+rl=vst(dds)
+e=ExpressionSet(assay(rl), AnnotatedDataFrame(as.data.frame(colData(rl))))
+arrayQualityMetrics(e,intgroup=c("treat"),force=T)
+```
+
+Re-read in counts and Plot counts.
+```{r}
+countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
+head(countData)
+row.names(countData)=countData$X
+countData$X=NULL
+length(countData[,1])
+
+totalCounts=colSums(countData)
+totalCounts
+barplot(totalCounts, col=c("coral", "blue", "blue", "coral"), ylab="raw counts")
+```
+
+DESeq analysis to see how our data varies by treatment. Re-read in counts then perform DESeq function.
+```{r}
+countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
+head(countData)
+row.names(countData)=countData$X
+countData$X=NULL
+length(countData[,1])
 treat=c( "Control", "P2553", "P2553", "Control")
 g=data.frame(treat)
 g
