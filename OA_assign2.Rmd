@@ -82,7 +82,21 @@ dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat)
 
 DESeq analysis
 ```{r}
-dds<-DESeq(dds, modelMatrixType=TRUE)
+countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
+head(countData)
+row.names(countData)=countData$X
+countData$X=NULL
+length(countData[,1])
+#41850
+treat=c( "Control", "P2553", "P2553", "Control")
+g=data.frame(treat)
+g
+colData<- g
+
+
+dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat) 
+
+dds<-DESeq(dds)
 head(dds)
 res<- results(dds)
 ```
