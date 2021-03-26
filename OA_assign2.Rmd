@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Effect of ocean acidification on Symbiodinium gene expression"
 author: "Olivia Nieves, Maria Ingersoll, Alexia Kotorov"
 date: "3/23/2021"
 output: html_document
@@ -34,7 +34,6 @@ head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
-#41850
 treat=c( "Control", "P2553", "P2553", "Control")
 g=data.frame(treat)
 g
@@ -95,10 +94,9 @@ summary(resP2553)
 nrow(resP2553[resP2553$padj<0.05 & !is.na(resP2553$padj),])
 
 plotMA(resP2553, main="Control vs P2553")
-plotMA(resP2553, main="Control vs P2553", ylim=c(-2,2))
 ```
 
-Use pairwise comparison to determaine the amount of up and downregulated genes in the P2553 treatment.
+Use pairwise comparison to determine the amount of up and downregulated genes in the P2553 treatment.
 ```{r}
 results <- as.data.frame(resP2553)
 head(results)
@@ -155,40 +153,75 @@ colnames(rld)=paste(colData$treat)
 head(rld)
 ```
 
-Create a sample distance heat map.
+Sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
 ```{r}
-sampleDists <- as.matrix(dist(t(rld)))
-heatmap.2(as.matrix(sampleDists), key=F, trace="none",
-          col=colorpanel(100, "black", "white"),
-          margin=c(10, 10), main="Sample Distance Matrix")
+rldpvals <- read.csv(file="OA_assign2_RLDandPVALS.csv", row.names=1)
+head(rldpvals)
+rld=rldpvals[,1:4]
+head(rld)
+
+sampleDists <- dist(t(rld))
+sampleDistMatrix <- as.matrix( sampleDists )
+treat=c( "Control", "P2553", "Control", "P2553")
+colnames(sampleDistMatrix)=paste(treat)
+rownames(sampleDistMatrix)=paste(treat)
+
+heat.colors = colorRampPalette(rev(c("blue","yellow","red")),bias=0.3)(100)
+pheatmap(sampleDistMatrix,color = heat.colors,cex=0.9,border_color=NA,cluster_rows=T,cluster_cols=T)
 ```
 
-Make venn diagrams.
+Plot PCA
 ```{r}
-P2553_up=row.names(resP2553[resP2553$padj<0.1 & !is.na(resP2553$padj) & resP2553$log2FoldChange>0,])
-length(P2553_up)
-P2553_down=row.names(resP2553[resP2553$padj<0.1 & !is.na(resP2553$padj) & resP2553$log2FoldChange<0,])
-length(P2553_down)
+rld_t=t(rld)
+pca <- prcomp(rld_t,center = TRUE)
+li <- pca$sdev^2 / sum(pca$sdev^2)
+pc1v <- round(li[1] * 100, 1)
+pc2v <- round(li[2] * 100, 1)
+pca_s <- as.data.frame(pca$x)
+pca_s <- pca_s[,c(1,2)]
+pca_s$Samples = row.names(pca_s)
+pca_s$treat=colData$treat
 
-P2553=row.names(resP2553[resP2553$padj<0.1 & !is.na(resP2553$padj),])
 
-candidates=list("P2553"=P2553)
-prettyvenn=venn.diagram(
-  x = candidates,
-  filename=NULL,
-  col = "transparent",
-  fill = c("coral2"),
-  alpha = 0.5,
-  cex = 2.5,
-  fontfamily = "sans",
-  fontface = "bold",
-  cat.default.pos = "text",
-  cat.col = c("darkred"),
-  cat.cex = 2.5,
-  cat.fontfamily = "sans",
-  cat.dist = c(0.08),
-  cat.pos = 1)
-
-grid.draw(prettyvenn)
+cbPalette <- c("darkgoldenrod2",  "darkolivegreen3", "dodgerblue3")
+ggplot(pca_s, aes(PC1, PC2, color = treat, pch = treat)) +
+  geom_point(size=3) +
+  scale_colour_manual(values=cbPalette)+
+  theme_bw() +
+  geom_polygon(alpha=.2)+
+  xlab(paste0("PC1: ",pc1v,"% variance")) +
+  ylab(paste0("PC2: ",pc2v,"% variance")) 
+adonis(pca$x ~ treat, data = pca_s, method='eu', na.rm = TRUE)
 ```
 
+GO enrichment
+```{r}
+input="P2553_GO.csv"
+goAnnotations="davies_cladeC_iso2gene.tab.txt" 
+goDatabase="go-basic.obo"
+goDivision="BP" # either MF, or BP, or CC
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+  perlPath="C:/Strawberry/perl/bin/perl.exe",
+  largest=0.1,
+	smallest=5,
+	clusterCutHeight=0.25)
+
+results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=-log(0.05,10),
+	level1=0.1,
+	level2=0.05, 
+	level3=0.01,
+	txtsize=1.2,    
+	treeHeight=0.5,
+	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+results
+
+```
+
+Heat map of deferentially expressed genes
+```{r}
+
+```
