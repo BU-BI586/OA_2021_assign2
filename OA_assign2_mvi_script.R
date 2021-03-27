@@ -208,6 +208,25 @@ heatmap_sigDEG = heatmap.2(as.matrix(sigDEG), col = col0, Rowv = TRUE, Colv = TR
                            trace = "none",
                            main = "Significant DEG",
                            margin = c(5,15))
+#Now make dendrograms of the enriched GO terms
+table5 = read.csv("Table5.3.csv")
+head(table5)
+iso2go = table5 %>%
+  dplyr::select(-X, -name) %>%
+  rename(Gene_ID = iso_id)
+head(iso2go)
+write.table(iso2go, file="Davies_CladeC_iso2go.txt", quote=F, sep="\t")
 
+input="P2553_GO.csv" 
+goAnnotations="Davies_CladeC_iso2go.txt" 
+goDatabase="go.obo"
+goDivision="CC"
+source("gomwu.functions.R")
 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1,
+           smallest=5,
+           clusterCutHeight=0.25,
+           )
 
