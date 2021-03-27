@@ -209,16 +209,10 @@ heatmap_sigDEG = heatmap.2(as.matrix(sigDEG), col = col0, Rowv = TRUE, Colv = TR
                            main = "Significant DEG",
                            margin = c(5,15))
 #Now make dendrograms of the enriched GO terms
-table5 = read.csv("Table5.3.csv")
-head(table5)
-iso2go = table5 %>%
-  dplyr::select(-X, -name) %>%
-  rename(Gene_ID = iso_id)
-head(iso2go)
-write.table(iso2go, file="Davies_CladeC_iso2go.txt", quote=F, sep="\t")
 
+#CC first
 input="P2553_GO.csv" 
-goAnnotations="Davies_CladeC_iso2go.txt" 
+goAnnotations="davies_cladeC_iso2go.tab" 
 goDatabase="go.obo"
 goDivision="CC"
 source("gomwu.functions.R")
@@ -229,4 +223,65 @@ gomwuStats(input, goDatabase, goAnnotations, goDivision,
            smallest=5,
            clusterCutHeight=0.25,
            )
+  #21 GO terms at 10% FDR
+quartz()
+results=gomwuPlot(input,goAnnotations,goDivision,
+                  absValue=-log(0.05,10),  
+                  level1=0.1,
+                  level2=0.05,
+                  level3=0.01,
+                  txtsize=1.2,
+                  treeHeight=0.5,
+                  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+#Now MF
+input="P2553_GO.csv" 
+goAnnotations="davies_cladeC_iso2go.tab" 
+goDatabase="go.obo"
+goDivision="MF"
+source("gomwu.functions.R")
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1,
+           smallest=5,
+           clusterCutHeight=0.25,
+)
+
+quartz()
+results=gomwuPlot(input,goAnnotations,goDivision,
+                  absValue=-log(0.05,10),  
+                  level1=0.1,
+                  level2=0.05,
+                  level3=0.01,
+                  txtsize=1.2,
+                  treeHeight=0.5,
+                  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+#Now BP
+input="P2553_GO.csv" 
+goAnnotations="davies_cladeC_iso2go.tab" 
+goDatabase="go.obo"
+goDivision="BP"
+source("gomwu.functions.R")
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+           perlPath="perl", 
+           largest=0.1,
+           smallest=5,
+           clusterCutHeight=0.25,
+)
+
+quartz()
+results=gomwuPlot(input,goAnnotations,goDivision,
+                  absValue=-log(0.05,10),  
+                  level1=0.1,
+                  level2=0.05,
+                  level3=0.01,
+                  txtsize=1.2,
+                  treeHeight=0.5,
+                  colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
 
