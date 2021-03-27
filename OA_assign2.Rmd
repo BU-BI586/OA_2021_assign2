@@ -255,12 +255,12 @@ head(go_input_P2553)
 write.csv(go_input_P2553, file="P2553_GO.csv", quote=F, row.names=FALSE)
 ```
 
-#GO enrichment.
+#GO enrichment. Repeat for each goDivison: either MF, or BP, or CC.
 ```{r}
 input="P2553_GO.csv"
-goAnnotations="davies_cladeC_iso2gene.tab.txt" 
+goAnnotations="davies_cladeC_iso2go.tab" 
 goDatabase="go-basic.obo"
-goDivision="MF" # either MF, or BP, or CC
+goDivision="MF"
 source("gomwu.functions.R")
 
 gomwuStats(input, goDatabase, goAnnotations, goDivision,
@@ -281,5 +281,58 @@ results=gomwuPlot(input,goAnnotations,goDivision,
 
 results
 ```
+
+```{r}
+input="P2553_GO.csv"
+goAnnotations="davies_cladeC_iso2go.tab" 
+goDatabase="go-basic.obo"
+goDivision="BP"
+source("gomwu.functions.R")
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+  perlPath="C:/Strawberry/perl/bin/perl.exe",
+  largest=0.1,
+	smallest=5,
+	clusterCutHeight=0.25)
+
+results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=-log(0.05,10),
+	level1=0.1,
+	level2=0.05, 
+	level3=0.01,
+	txtsize=1.2,    
+	treeHeight=0.5,
+	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+results
+```
+
+```{r}
+input="P2553_GO.csv"
+goAnnotations="davies_cladeC_iso2go.tab" 
+goDatabase="go-basic.obo"
+goDivision="CC"
+source("gomwu.functions.R")
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+  perlPath="C:/Strawberry/perl/bin/perl.exe",
+  largest=0.1,
+	smallest=5,
+	clusterCutHeight=0.25)
+
+results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=-log(0.05,10),
+	level1=0.1,
+	level2=0.05, 
+	level3=0.01,
+	txtsize=1.2,    
+	treeHeight=0.5,
+	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+results
+```
+
 
 ##Conclusion
