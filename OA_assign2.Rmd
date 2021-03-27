@@ -4,12 +4,35 @@ author: "Olivia Nieves, Maria Ingersoll, Alexia Kotorov"
 date: "3/23/2021"
 output: html_document
 ---
-Set your working directory.
+
+##Introduction
+In this project we use DESeq2 analysis in order to analyze gene expression differences in *Symbiodinium* that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We reanalyzed the data from Davies et al. 2018.
+
+
+##Version Control
+R Version: 4.0.4  
+DESeq2: 1.30.1  
+affycoretools: 1.62.0 
+arrayQualityMetrics: 3.46.0  
+genefilter: 1.72.1
+Biobase: 2.50.0
+ggplot2: 3.3.3
+dplyr: 1.0.5
+pheatmap: 1.0.12
+vegan: 2.5-7
+ggrepel: 0.9.1
+tidyverse: 1.3.0
+RColorBrewer: 1.1-2
+gplots: 3.1.1
+ape: 5.4-1
+
+##Data Analysis
+#Set your working directory.
 ```{r}
 setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2") 
 ```
 
-Library the necessary packages.
+#Library the necessary packages.
 ```{r}
 library(DESeq2) 
 library(affycoretools)
@@ -24,19 +47,19 @@ library(ggrepel)
 library(tidyverse)
 library(RColorBrewer)
 library(gplots)
-library(VennDiagram)
+library(ape)
 ```
 
-Look for outliers. First, read in counts then create arrayQualityMetrics report and check HTML export file for outliers. NOTE: no outliers found in our data set.
+#Look for outliers. First, read in counts then create arrayQualityMetrics report and check HTML export file for outliers. NOTE: no outliers found in our data set.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
-head(countData)
+#head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
 treat=c( "Control", "P2553", "P2553", "Control")
 g=data.frame(treat)
-g
+#g
 colData<- g
 
 dds<-DESeqDataSetFromMatrix(countData=countData, colData=g, design=~treat)
@@ -47,10 +70,10 @@ e=ExpressionSet(assay(rl), AnnotatedDataFrame(as.data.frame(colData(rl))))
 arrayQualityMetrics(e,intgroup=c("treat"),force=T)
 ```
 
-Re-read in counts and Plot counts.
+#Re-read in counts and Plot counts.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
-head(countData)
+#head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
@@ -60,32 +83,32 @@ totalCounts
 barplot(totalCounts, col=c("coral", "blue", "blue", "coral"), ylab="raw counts")
 ```
 
-DESeq analysis to see how our data varies by treatment. Re-read in counts then perform DESeq function.
+#DESeq analysis to see how our data varies by treatment. Re-read in counts then perform DESeq function.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
-head(countData)
+#head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
 treat=c( "Control", "P2553", "P2553", "Control")
 g=data.frame(treat)
-g
+#g
 colData<- g
 
 
 dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat) 
 
 dds<-DESeq(dds)
-head(dds)
+#head(dds)
 res<- results(dds)
 ```
 
-Look at dispersion plot.
+#Look at dispersion plot.
 ```{r}
 plotDispEsts(dds, main="Dispersion plot")
 ```
 
-P2553 vs. Control pairwise comparison (we're looking at gene expression RELATIVE to the control). MA plot to look at the depth of convergance.
+#P2553 vs. Control pairwise comparison (we're looking at gene expression RELATIVE to the control). MA plot to look at the depth of convergance.
 ```{r}
 resP2553 <- results(dds, contrast=c("treat","P2553","Control"))
 table(resP2553$padj<0.01)
@@ -96,10 +119,10 @@ nrow(resP2553[resP2553$padj<0.05 & !is.na(resP2553$padj),])
 plotMA(resP2553, main="Control vs P2553")
 ```
 
-Use pairwise comparison to determine the amount of up and downregulated genes in the P2553 treatment.
+#Use pairwise comparison to determine the amount of up and downregulated genes in the P2553 treatment.
 ```{r}
 results <- as.data.frame(resP2553)
-head(results)
+#head(results)
 
 nrow(resP2553[resP2553$padj<0.1 & resP2553$log2FoldChange > 0 & !is.na(resP2553$padj),])
 nrow(resP2553[resP2553$padj<0.1 & resP2553$log2FoldChange < 0 & !is.na(resP2553$padj),])
@@ -107,58 +130,44 @@ nrow(resP2553[resP2553$padj<0.1 & resP2553$log2FoldChange < 0 & !is.na(resP2553$
 write.table(resP2553, file="P2553.txt", quote=F, sep="\t")
 
 cd <- read.table("P2553.txt")
-head(cd)
+#head(cd)
 ```
 
-Make the GO table.
-```{r}
-go_input_P2553 = cd %>%
-  tibble::rownames_to_column(var = "iso") %>%
-  mutate(mutated_p = -log(pvalue)) %>%
-  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
-  na.omit() %>%
-  select(iso, mutated_p_updown)
-head(go_input_P2553)
-colnames(go_input_P2553) <- c("gene", "pval")
-head(go_input_P2553)
-write.csv(go_input_P2553, file="P2553_GO.csv", quote=F, row.names=FALSE)
-```
-
-Get p values.
+#Get p values.
 ```{r}
 val2553=cbind(resP2553$pvalue, resP2553$padj)
-head(val2553)
+#head(val2553)
 colnames(val2553)=c("pval.2553", "padj.2553")
 length(val2553[,1])
 table(complete.cases(val2553))
 ```
 
-Make rlogdata and pvals table.
+#Make rlogdata and pvals table.
 ```{r}
 rlog=rlogTransformation(dds, blind=TRUE) 
 rld=assay(rlog)
-head(rld)
+#head(rld)
 colnames(rld)=paste(colData$treat)
-head(rld)
+#head(rld)
 length(rld[,1])
 
 rldpvals=cbind(rld,val2553)
-head(rldpvals)
+#head(rldpvals)
 dim(rldpvals)
 table(complete.cases(rldpvals))
 
 write.csv(rldpvals, "OA_assign2_RLDandPVALS.csv", quote=F)
 
 colnames(rld)=paste(colData$treat)
-head(rld)
+#head(rld)
 ```
 
-Sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
+#Sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
 ```{r}
 rldpvals <- read.csv(file="OA_assign2_RLDandPVALS.csv", row.names=1)
-head(rldpvals)
+#head(rldpvals)
 rld=rldpvals[,1:4]
-head(rld)
+#head(rld)
 
 sampleDists <- dist(t(rld))
 sampleDistMatrix <- as.matrix( sampleDists )
@@ -170,7 +179,7 @@ heat.colors = colorRampPalette(rev(c("blue","yellow","red")),bias=0.3)(100)
 pheatmap(sampleDistMatrix,color = heat.colors,cex=0.9,border_color=NA,cluster_rows=T,cluster_cols=T)
 ```
 
-Plot PCA
+#Plot PCA.
 ```{r}
 rld_t=t(rld)
 pca <- prcomp(rld_t,center = TRUE)
@@ -181,7 +190,6 @@ pca_s <- as.data.frame(pca$x)
 pca_s <- pca_s[,c(1,2)]
 pca_s$Samples = row.names(pca_s)
 pca_s$treat=colData$treat
-
 
 cbPalette <- c("darkgoldenrod2",  "darkolivegreen3", "dodgerblue3")
 ggplot(pca_s, aes(PC1, PC2, color = treat, pch = treat)) +
@@ -194,12 +202,66 @@ ggplot(pca_s, aes(PC1, PC2, color = treat, pch = treat)) +
 adonis(pca$x ~ treat, data = pca_s, method='eu', na.rm = TRUE)
 ```
 
-GO enrichment
+#Create a list of all the genes that have a pval <=0.1.
+```{r}
+#head(rldpvals)
+rldpvals_10 = filter(rldpvals, pval.2553 <= 0.1, preserve = TRUE)
+length(rldpvals_10[,1])
+length(rldpvals[,1])
+rld_10 = rldpvals_10[,1:4]
+rld_10 = rownames_to_column(rld_10, var = "Gene_ID")
+#head(rld_10)
+```
+
+#Make the variable "gene" with the gene symbol called description. Then join the two variables rld_10 and gene by "Gene_ID."
+```{r}
+gene = read.delim("davies_cladeC_iso2gene.tab.txt", sep = "\t")%>%
+  mutate(Description = gsub(".* GN=", "", Description)) %>%
+  mutate(Description = gsub(" .*", "", Description))
+#head(gene)
+
+sigDEG = rld_10 %>%
+  left_join(gene) %>%
+  mutate(Description = make.names(Description, unique = TRUE)) %>%
+  column_to_rownames(var = "Description") %>%
+  dplyr::select(-Gene_ID) %>%
+  drop_na() %>%
+  dplyr::select(sort(current_vars()))
+#head(sigDEG)
+nrow(sigDEG)
+```
+
+#Make a heatmap of all the differentially expressed genes (DEGs).
+```{r}
+col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+heatmap_sigDEG = heatmap.2(as.matrix(sigDEG), col = col0, Rowv = TRUE, Colv = TRUE, scale = "row",
+                           dendrogram = "both",
+                           trace = "none",
+                           main = "Significant DEG",
+                           margin = c(5,15))
+```
+
+#Make the GO table.
+```{r}
+go_input_P2553 = cd %>%
+  tibble::rownames_to_column(var = "iso") %>%
+  mutate(mutated_p = -log(pvalue)) %>%
+  mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
+  na.omit() %>%
+  select(iso, mutated_p_updown)
+#head(go_input_P2553)
+colnames(go_input_P2553) <- c("gene", "pval")
+head(go_input_P2553)
+write.csv(go_input_P2553, file="P2553_GO.csv", quote=F, row.names=FALSE)
+```
+
+#GO enrichment. Repeat for each goDivison: either MF, or BP, or CC.
 ```{r}
 input="P2553_GO.csv"
-goAnnotations="davies_cladeC_iso2gene.tab.txt" 
+goAnnotations="davies_cladeC_iso2go.tab" 
 goDatabase="go-basic.obo"
-goDivision="BP" # either MF, or BP, or CC
+goDivision="MF"
+source("gomwu.functions.R")
 
 gomwuStats(input, goDatabase, goAnnotations, goDivision,
   perlPath="C:/Strawberry/perl/bin/perl.exe",
@@ -218,10 +280,59 @@ results=gomwuPlot(input,goAnnotations,goDivision,
 )
 
 results
-
 ```
 
-Heat map of deferentially expressed genes
 ```{r}
+input="P2553_GO.csv"
+goAnnotations="davies_cladeC_iso2go.tab" 
+goDatabase="go-basic.obo"
+goDivision="BP"
+source("gomwu.functions.R")
 
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+  perlPath="C:/Strawberry/perl/bin/perl.exe",
+  largest=0.1,
+	smallest=5,
+	clusterCutHeight=0.25)
+
+results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=-log(0.05,10),
+	level1=0.1,
+	level2=0.05, 
+	level3=0.01,
+	txtsize=1.2,    
+	treeHeight=0.5,
+	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+results
 ```
+
+```{r}
+input="P2553_GO.csv"
+goAnnotations="davies_cladeC_iso2go.tab" 
+goDatabase="go-basic.obo"
+goDivision="CC"
+source("gomwu.functions.R")
+
+gomwuStats(input, goDatabase, goAnnotations, goDivision,
+  perlPath="C:/Strawberry/perl/bin/perl.exe",
+  largest=0.1,
+	smallest=5,
+	clusterCutHeight=0.25)
+
+results=gomwuPlot(input,goAnnotations,goDivision,
+	absValue=-log(0.05,10),
+	level1=0.1,
+	level2=0.05, 
+	level3=0.01,
+	txtsize=1.2,    
+	treeHeight=0.5,
+	colors=c("dodgerblue2","firebrick1","skyblue2","lightcoral")
+)
+
+results
+```
+
+
+##Conclusion
