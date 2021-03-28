@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ##Introduction
-In this project we use DESeq2 analysis in order to analyze gene expression differences in *Symbiodinium* that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We reanalyzed the data from Davies et al. 2018.
+In this project we reanalyze the data from Davies et al. 2018. First, we use DESeq2 analysis in order to analyze gene expression differences in *Symbiodinium* that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We compare P2553 condition to a control and found that under these conditions, *Symbiodinium* upregulate 14 and downregulate 3 genes when compared to the control. Similarities between our samples and  differentially expressed genes are visualized. Next, we use GO Enrichment analysis to determine which GO terms are over/under-represented in our samples under acidification stress.
 
 
 ##Version Control
@@ -336,3 +336,4 @@ results
 
 
 ##Conclusion
+Through our analysis we find that
