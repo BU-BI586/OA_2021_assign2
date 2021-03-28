@@ -24,6 +24,7 @@ ggrepel: 0.9.1
 tidyverse: 1.3.0
 RColorBrewer: 1.1-2
 gplots: 3.1.1
+gsubfn: 0.7
 ape: 5.4-1
 
 ##Data Analysis
@@ -47,6 +48,7 @@ library(ggrepel)
 library(tidyverse)
 library(RColorBrewer)
 library(gplots)
+library(gsubfn)
 library(ape)
 ```
 
@@ -215,7 +217,7 @@ rld_10 = rownames_to_column(rld_10, var = "Gene_ID")
 
 #Make the variable "gene" with the gene symbol called description. Then join the two variables rld_10 and gene by "Gene_ID."
 ```{r}
-gene = read.delim("davies_cladeC_iso2gene.tab.txt", sep = "\t")%>%
+gene = read.delim("davies_cladeC_iso2gene.tab", sep = "\t")%>%
   mutate(Description = gsub(".* GN=", "", Description)) %>%
   mutate(Description = gsub(" .*", "", Description))
 #head(gene)
