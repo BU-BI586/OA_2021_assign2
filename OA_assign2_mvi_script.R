@@ -172,7 +172,7 @@ ggplot(pca_s, aes(PC1, PC2, color = treat, pch = treat)) +
   ylab(paste0("PC2: ",pc2v,"% variance")) 
 head(pca)
 
-#Creating a list of all the genes that have a pval <=0.1
+#Creating a list of all the genes that have a pval <=0.1 and padj <=0.1
 head(rldpvals)
 rldpvals_10 = filter(rldpvals, pval.2553 <= 0.1, preserve = TRUE)
 length(rldpvals_10[,1])
@@ -182,6 +182,11 @@ rld_10 = rldpvals_10[,1:4]
 rld_10 = rownames_to_column(rld_10, var = "Gene_ID")
 head(rld_10)
 
+rldpadj_10 = filter(rldpvals, padj.2553 <= 0.1, preserve = TRUE)
+length(rldpadj_10[,1])
+rld_10_adj = rldpadj_10[,1:4]
+rld_10_adj = rownames_to_column(rld_10_adj, var = "Gene_ID")
+
 #Make the variable "gene" with the gene symbol called description
 head(gene)
 gene = read.delim("davies_cladeC_iso2gene.tab.txt", sep = "\t")%>%
@@ -189,7 +194,7 @@ gene = read.delim("davies_cladeC_iso2gene.tab.txt", sep = "\t")%>%
   mutate(Description = gsub(" .*", "", Description))
 head(gene)
 
-#Join your two variables rld_10 and gene by "Gene_ID"
+#Join your two variables rld_10 and gene by "Gene_ID" same thing with rld_10_adj
 sigDEG = rld_10 %>%
   left_join(gene) %>%
   mutate(Description = make.names(Description, unique = TRUE)) %>%
@@ -201,13 +206,31 @@ head(sigDEG)
 nrow(sigDEG)
 #903, nice!
 
+sigDEG_adj = rld_10_adj %>%
+  left_join(gene) %>%
+  mutate(Description = make.names(Description, unique = TRUE)) %>%
+  column_to_rownames(var = "Description") %>%
+  dplyr::select(-Gene_ID) %>%
+  drop_na() %>%
+  dplyr::select(sort(current_vars()))
+#head(sigDEG)
+nrow(sigDEG_adj)
+
 #Now make a heatmap of all the DEGs
 col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
 heatmap_sigDEG = heatmap.2(as.matrix(sigDEG), col = col0, Rowv = TRUE, Colv = TRUE, scale = "row",
                            dendrogram = "both",
                            trace = "none",
                            main = "Significant DEG",
-                           margin = c(5,15))
+                           margin = c(10,15))
+
+heatmap_sigDEG = heatmap.2(as.matrix(sigDEG_adj), col = col0, Rowv = TRUE, Colv = TRUE, scale = "row",
+                           dendrogram = "both",
+                           trace = "none",
+                           main = "P-Adjusted Significant DEG",
+                           margin = c(10,15))
+
+
 #Now make dendrograms of the enriched GO terms
 
 #CC first
