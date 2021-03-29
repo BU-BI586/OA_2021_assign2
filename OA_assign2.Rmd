@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ##Introduction
-In this project we reanalyze the data from Davies et al. 2018. First, we use DESeq2 analysis in order to analyze gene expression differences in *Symbiodinium* that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We compare P2553 condition to a control and found that under these conditions, *Symbiodinium* upregulate 14 and downregulate 3 genes when compared to the control. Similarities between our samples and  differentially expressed genes are visualized. Next, we use GO Enrichment analysis to determine which GO terms are over/under-represented in our samples under acidification stress.
+In this project we reanalyze the data from Davies et al. 2018. First, we use DESeq2 analysis in order to analyze gene expression differences in Clade C of the dinoflagellate family Symbiodiniaceae that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We compare P2553 condition (a highly acidic environment) to a control and found that, under these conditions, Symbiodiniaceae upregulate 14 and downregulate 3 genes when compared to the control (rlog fold change value averaged across all samples from each condition; adjusted p-value of less than 0.1). Via heatmap, we used less stringent conditions to visualize the trends of all differentially expressed genes (non-adjusted p-value of less than 0.1) in each condition, demonstrating distinct clustering by treatment condition. Next, we use GO Enrichment analysis to determine which GO terms are over/under-represented in our samples under acidification stress. From analysis of the enriched cellular compartment (CC) GO terms, we identified the mitochondria as an important regulator of the acidification stress response in Clade C Symbiodiniaceae *in hospite.*
 
 
 ##Version Control
@@ -30,7 +30,7 @@ ape: 5.4-1
 ##Data Analysis
 #Set your working directory.
 ```{r}
-setwd("C:/Users/Olivia Nieves/Documents/BU undergrad/BI586/OA_assign2") 
+setwd("/Users/mariaingersoll/Desktop/BU2020-2021/Ecol_and_Enviro_Genomics/BI586-git/OA_assign2")
 ```
 
 #Library the necessary packages.
@@ -72,7 +72,7 @@ e=ExpressionSet(assay(rl), AnnotatedDataFrame(as.data.frame(colData(rl))))
 arrayQualityMetrics(e,intgroup=c("treat"),force=T)
 ```
 
-#Re-read in counts and Plot counts.
+#Re-read in counts and Plot count values as a barplot. This is a sanity check to assure that our samples contain relatively similar count values.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
 #head(countData)
@@ -85,7 +85,7 @@ totalCounts
 barplot(totalCounts, col=c("coral", "blue", "blue", "coral"), ylab="raw counts")
 ```
 
-#DESeq analysis to see how our data varies by treatment. Re-read in counts then perform DESeq function.
+#We next perform DESeq analysis to see how our data varies by treatment (by calculating the log2foldchange, the pvalue, and the adjusted pvalue for each gene). Re-read in counts then perform DESeq function.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
 #head(countData)
@@ -102,15 +102,15 @@ dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat)
 
 dds<-DESeq(dds)
 #head(dds)
-res<- results(dds)
+res <- results(dds)
 ```
 
-#Look at dispersion plot.
+#Look at dispersion plot to visualize the trend of our data.
 ```{r}
 plotDispEsts(dds, main="Dispersion plot")
 ```
 
-#P2553 vs. Control pairwise comparison (we're looking at gene expression RELATIVE to the control). MA plot to look at the depth of convergance.
+#P2553 vs. Control pairwise comparison (we're looking at gene expression RELATIVE to the control). MA plot to look at the depth of convergance and general trends of logfoldchange. Dots above 0 are upregulated; dots below zero are downregulated. Blue dots are significantly differentially regulated (padj < 0.05)
 ```{r}
 resP2553 <- results(dds, contrast=c("treat","P2553","Control"))
 table(resP2553$padj<0.01)
@@ -164,7 +164,7 @@ colnames(rld)=paste(colData$treat)
 #head(rld)
 ```
 
-#Sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
+#Make a sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
 ```{r}
 rldpvals <- read.csv(file="OA_assign2_RLDandPVALS.csv", row.names=1)
 #head(rldpvals)
@@ -181,7 +181,7 @@ heat.colors = colorRampPalette(rev(c("blue","yellow","red")),bias=0.3)(100)
 pheatmap(sampleDistMatrix,color = heat.colors,cex=0.9,border_color=NA,cluster_rows=T,cluster_cols=T)
 ```
 
-#Plot PCA.
+#Plot PCA of the data to visualize non-biased clustering of all the samples.
 ```{r}
 rld_t=t(rld)
 pca <- prcomp(rld_t,center = TRUE)
@@ -204,20 +204,24 @@ ggplot(pca_s, aes(PC1, PC2, color = treat, pch = treat)) +
 adonis(pca$x ~ treat, data = pca_s, method='eu', na.rm = TRUE)
 ```
 
-#Create a list of all the genes that have a pval <=0.1.
+#Create a list of all the genes that have a pval <=0.1 in order to analyze the overall trends of differentially expressed genes in all our samples. Also create a list of all the genes that have a padj <=0.1 in order to visualize the most differentially regulated genes
 ```{r}
-#head(rldpvals)
 rldpvals_10 = filter(rldpvals, pval.2553 <= 0.1, preserve = TRUE)
 length(rldpvals_10[,1])
 length(rldpvals[,1])
 rld_10 = rldpvals_10[,1:4]
 rld_10 = rownames_to_column(rld_10, var = "Gene_ID")
 #head(rld_10)
+
+rldpadj_10 = filter(rldpvals, padj.2553 <= 0.1, preserve = TRUE)
+length(rldpadj_10[,1])
+rld_10_adj = rldpadj_10[,1:4]
+rld_10_adj = rownames_to_column(rld_10_adj, var = "Gene_ID")
 ```
 
-#Make the variable "gene" with the gene symbol called description. Then join the two variables rld_10 and gene by "Gene_ID."
+#Make the variable "gene" with the gene symbol called description. Then join the two variables rld_10 and gene by "Gene_ID." Do the same with rld_10_adj and gene
 ```{r}
-gene = read.delim("davies_cladeC_iso2gene.tab", sep = "\t")%>%
+gene = read.delim("davies_cladeC_iso2gene.tab.txt", sep = "\t")%>%
   mutate(Description = gsub(".* GN=", "", Description)) %>%
   mutate(Description = gsub(" .*", "", Description))
 #head(gene)
@@ -231,19 +235,35 @@ sigDEG = rld_10 %>%
   dplyr::select(sort(current_vars()))
 #head(sigDEG)
 nrow(sigDEG)
+
+sigDEG_adj = rld_10_adj %>%
+  left_join(gene) %>%
+  mutate(Description = make.names(Description, unique = TRUE)) %>%
+  column_to_rownames(var = "Description") %>%
+  dplyr::select(-Gene_ID) %>%
+  drop_na() %>%
+  dplyr::select(sort(current_vars()))
+#head(sigDEG)
+nrow(sigDEG_adj)
 ```
 
-#Make a heatmap of all the differentially expressed genes (DEGs).
+#Make a heatmap of all the differentially expressed genes (DEGs) of both the less stringent (pval) and more stringent (padj) conditions.
 ```{r}
 col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
 heatmap_sigDEG = heatmap.2(as.matrix(sigDEG), col = col0, Rowv = TRUE, Colv = TRUE, scale = "row",
                            dendrogram = "both",
                            trace = "none",
                            main = "Significant DEG",
-                           margin = c(5,15))
+                           margin = c(10,15))
+
+heatmap_sigDEG = heatmap.2(as.matrix(sigDEG_adj), col = col0, Rowv = TRUE, Colv = TRUE, scale = "row",
+                           dendrogram = "both",
+                           trace = "none",
+                           main = "P-Adjusted Significant DEG",
+                           margin = c(10,15))
 ```
 
-#Make the GO table.
+#Make a GO table of the properly formatted isoforms and logfoldchange info for further analysis.
 ```{r}
 go_input_P2553 = cd %>%
   tibble::rownames_to_column(var = "iso") %>%
@@ -338,4 +358,4 @@ results
 
 
 ##Conclusion
-Through our analysis we find that
+Our analysis of differetially expressed genes in Clade C Symbiodiniaceae *in hospite* under extreme ocean acidification conditions revealed provides insight into the cellular response of the symbiont under acidification stress. Upon stringent analysis of differentially expressed genes revealed 14 genes upregulated and 3 genes downregulated. From analysis of the enriched cellular compartment (CC) GO terms, we identified the mitochondria as an important regulator of the acidification stress response in Clade C Symbiodiniaceae *in hospite.* In agreement with the Davies et al., 2018 paper upon which we based this study, gene expression (under stringent analysis) does not vary greatly within the symbiont under acidification stress. This may be due to the fact that the symbiont responds on a physiological level, adjusting macromolecule function instead transcriptional regulation, which is in contrast to what researchers have observed in the host under acidification stress.
