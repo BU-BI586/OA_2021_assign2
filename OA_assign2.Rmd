@@ -1,15 +1,15 @@
 ---
 title: "Effect of ocean acidification on Symbiodinium gene expression"
-author: "Olivia Nieves, Maria Ingersoll, Alexia Kotorov"
+author: "Olivia Nieves and Maria Ingersoll"
 date: "3/23/2021"
 output: html_document
 ---
 
-##Introduction
-In this project we reanalyze the data from Davies et al. 2018. First, we use DESeq2 analysis in order to analyze gene expression differences in Clade C of the dinoflagellate family Symbiodiniaceae that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We compare P2553 condition (a highly acidic environment) to a control and found that, under these conditions, Symbiodiniaceae upregulate 14 and downregulate 3 genes when compared to the control (rlog fold change value averaged across all samples from each condition; adjusted p-value of less than 0.1). Via heatmap, we used less stringent conditions to visualize the trends of all differentially expressed genes (non-adjusted p-value of less than 0.1) in each condition, demonstrating distinct clustering by treatment condition. Next, we use GO Enrichment analysis to determine which GO terms are over/under-represented in our samples under acidification stress. From analysis of the enriched cellular compartment (CC) GO terms, we identified the mitochondria as an important regulator of the acidification stress response in Clade C Symbiodiniaceae *in hospite.*
+## Introduction
+In this project we reanalyze the data from Davies et al. 2018. First, we use DESeq2 analysis in order to analyze gene expression differences in Clade C of the dinoflagellate family Symbiodiniaceae that associate with the coral *Siderastrea siderea* when exposed to a high level of ocean acidification. We compare P2553 condition (a highly acidic environment) to a control and found that, under these conditions, Symbiodiniaceae upregulate 14 and downregulate 3 genes when compared to the control (rlog fold change value averaged across all samples from each condition; adjusted p-value of less than 0.1). Via heatmap, we used less stringent conditions to visualize the trends of all differentially expressed genes (non-adjusted p-value of less than 0.1) in each condition, demonstrating distinct clustering by treatment condition. Next, we use GO Enrichment analysis to determine which GO terms are over/under-represented in our samples under acidification stress. Finally, we used GO term rank-based enrichment analysis to determine functional processes that differ within the symbiont under the two conditions.
 
 
-##Version Control
+## Version Control
 R Version: 4.0.4  
 DESeq2: 1.30.1  
 affycoretools: 1.62.0 
@@ -27,14 +27,14 @@ gplots: 3.1.1
 gsubfn: 0.7
 ape: 5.4-1
 
-##Data Analysis
-#Set your working directory.
+## Data Analysis
+- Set your working directory.
 ```{r}
 setwd("/Users/mariaingersoll/Desktop/BU2020-2021/Ecol_and_Enviro_Genomics/BI586-git/OA_assign2")
 ```
 
-#Library the necessary packages.
-```{r}
+- Library the necessary packages.
+```{r, message=FALSE, warning=FALSE}
 library(DESeq2) 
 library(affycoretools)
 library(arrayQualityMetrics)
@@ -52,16 +52,14 @@ library(gsubfn)
 library(ape)
 ```
 
-#Look for outliers. First, read in counts then create arrayQualityMetrics report and check HTML export file for outliers. NOTE: no outliers found in our data set.
-```{r}
+- Look for outliers. First, read in counts then create arrayQualityMetrics report and check HTML export file for outliers. NOTE: no outliers found in our data set.
+```{r, message=FALSE, warning=FALSE}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
-#head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
 treat=c( "Control", "P2553", "P2553", "Control")
 g=data.frame(treat)
-#g
 colData<- g
 
 dds<-DESeqDataSetFromMatrix(countData=countData, colData=g, design=~treat)
@@ -72,10 +70,9 @@ e=ExpressionSet(assay(rl), AnnotatedDataFrame(as.data.frame(colData(rl))))
 arrayQualityMetrics(e,intgroup=c("treat"),force=T)
 ```
 
-#Re-read in counts and Plot count values as a barplot. This is a sanity check to assure that our samples contain relatively similar count values.
+- Re-read in counts and Plot count values as a barplot. This is a sanity check to assure that our samples contain relatively similar count values.
 ```{r}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
-#head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
@@ -85,32 +82,29 @@ totalCounts
 barplot(totalCounts, col=c("coral", "blue", "blue", "coral"), ylab="raw counts")
 ```
 
-#We next perform DESeq analysis to see how our data varies by treatment (by calculating the log2foldchange, the pvalue, and the adjusted pvalue for each gene). Re-read in counts then perform DESeq function.
-```{r}
+- We next perform DESeq analysis to see how our data varies by treatment (by calculating the log2foldchange, the pvalue, and the adjusted pvalue for each gene). Re-read in counts then perform DESeq function.
+```{r, message=FALSE, warning=FALSE}
 countData <- read.table("1.Assign2_GE_Sym_OA.csv", sep=",", header=T)
-#head(countData)
 row.names(countData)=countData$X
 countData$X=NULL
 length(countData[,1])
 treat=c( "Control", "P2553", "P2553", "Control")
 g=data.frame(treat)
-#g
 colData<- g
 
 
 dds<-DESeqDataSetFromMatrix(countData=countData, colData=colData, design=~treat) 
 
 dds<-DESeq(dds)
-#head(dds)
 res <- results(dds)
 ```
 
-#Look at dispersion plot to visualize the trend of our data.
+- Look at dispersion plot to visualize the trend of our data.
 ```{r}
 plotDispEsts(dds, main="Dispersion plot")
 ```
 
-#P2553 vs. Control pairwise comparison (we're looking at gene expression RELATIVE to the control). MA plot to look at the depth of convergance and general trends of logfoldchange. Dots above 0 are upregulated; dots below zero are downregulated. Blue dots are significantly differentially regulated (padj < 0.05)
+- P2553 vs. Control pairwise comparison (we're looking at gene expression RELATIVE to the control). MA plot to look at the depth of convergance and general trends of logfoldchange. Dots above 0 are upregulated; dots below zero are downregulated. Blue dots are significantly differentially regulated (padj < 0.05)
 ```{r}
 resP2553 <- results(dds, contrast=c("treat","P2553","Control"))
 table(resP2553$padj<0.01)
@@ -121,10 +115,9 @@ nrow(resP2553[resP2553$padj<0.05 & !is.na(resP2553$padj),])
 plotMA(resP2553, main="Control vs P2553")
 ```
 
-#Use pairwise comparison to determine the amount of up and downregulated genes in the P2553 treatment.
+- Use pairwise comparison to determine the amount of up and downregulated genes in the P2553 treatment.
 ```{r}
 results <- as.data.frame(resP2553)
-#head(results)
 
 nrow(resP2553[resP2553$padj<0.1 & resP2553$log2FoldChange > 0 & !is.na(resP2553$padj),])
 nrow(resP2553[resP2553$padj<0.1 & resP2553$log2FoldChange < 0 & !is.na(resP2553$padj),])
@@ -132,44 +125,40 @@ nrow(resP2553[resP2553$padj<0.1 & resP2553$log2FoldChange < 0 & !is.na(resP2553$
 write.table(resP2553, file="P2553.txt", quote=F, sep="\t")
 
 cd <- read.table("P2553.txt")
-#head(cd)
 ```
 
-#Get p values.
+- Get p values.
 ```{r}
 val2553=cbind(resP2553$pvalue, resP2553$padj)
-#head(val2553)
 colnames(val2553)=c("pval.2553", "padj.2553")
 length(val2553[,1])
 table(complete.cases(val2553))
 ```
 
-#Make rlogdata and pvals table.
+- Make rlogdata and pvals table.
 ```{r}
 rlog=rlogTransformation(dds, blind=TRUE) 
 rld=assay(rlog)
-#head(rld)
+head(rld)
 colnames(rld)=paste(colData$treat)
-#head(rld)
+head(rld)
 length(rld[,1])
 
 rldpvals=cbind(rld,val2553)
-#head(rldpvals)
+head(rldpvals)
 dim(rldpvals)
 table(complete.cases(rldpvals))
 
 write.csv(rldpvals, "OA_assign2_RLDandPVALS.csv", quote=F)
 
 colnames(rld)=paste(colData$treat)
-#head(rld)
+head(rld)
 ```
 
-#Make a sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
-```{r}
+- Make a sample distance heat map in order to look at overall similarities between our samples using raw log values in count data.
+```{r, message=FALSE}
 rldpvals <- read.csv(file="OA_assign2_RLDandPVALS.csv", row.names=1)
-#head(rldpvals)
 rld=rldpvals[,1:4]
-#head(rld)
 
 sampleDists <- dist(t(rld))
 sampleDistMatrix <- as.matrix( sampleDists )
@@ -181,8 +170,8 @@ heat.colors = colorRampPalette(rev(c("blue","yellow","red")),bias=0.3)(100)
 pheatmap(sampleDistMatrix,color = heat.colors,cex=0.9,border_color=NA,cluster_rows=T,cluster_cols=T)
 ```
 
-#Plot PCA of the data to visualize non-biased clustering of all the samples.
-```{r}
+- Plot PCA of the data to visualize non-biased clustering of all the samples.
+```{r, message=FALSE}
 rld_t=t(rld)
 pca <- prcomp(rld_t,center = TRUE)
 li <- pca$sdev^2 / sum(pca$sdev^2)
@@ -204,14 +193,13 @@ ggplot(pca_s, aes(PC1, PC2, color = treat, pch = treat)) +
 adonis(pca$x ~ treat, data = pca_s, method='eu', na.rm = TRUE)
 ```
 
-#Create a list of all the genes that have a pval <=0.1 in order to analyze the overall trends of differentially expressed genes in all our samples. Also create a list of all the genes that have a padj <=0.1 in order to visualize the most differentially regulated genes
+- Create a list of all the genes that have a pval <=0.1 in order to analyze the overall trends of differentially expressed genes in all our samples. Also create a list of all the genes that have a padj <=0.1 in order to visualize the most differentially regulated genes
 ```{r}
 rldpvals_10 = filter(rldpvals, pval.2553 <= 0.1, preserve = TRUE)
 length(rldpvals_10[,1])
 length(rldpvals[,1])
 rld_10 = rldpvals_10[,1:4]
 rld_10 = rownames_to_column(rld_10, var = "Gene_ID")
-#head(rld_10)
 
 rldpadj_10 = filter(rldpvals, padj.2553 <= 0.1, preserve = TRUE)
 length(rldpadj_10[,1])
@@ -219,12 +207,12 @@ rld_10_adj = rldpadj_10[,1:4]
 rld_10_adj = rownames_to_column(rld_10_adj, var = "Gene_ID")
 ```
 
-#Make the variable "gene" with the gene symbol called description. Then join the two variables rld_10 and gene by "Gene_ID." Do the same with rld_10_adj and gene
-```{r}
+- Make the variable "gene" with the gene symbol called description. Then join the two variables rld_10 and gene by "Gene_ID." Do the same with rld_10_adj and gene
+```{r, warning=FALSE}
 gene = read.delim("davies_cladeC_iso2gene.tab.txt", sep = "\t")%>%
   mutate(Description = gsub(".* GN=", "", Description)) %>%
   mutate(Description = gsub(" .*", "", Description))
-#head(gene)
+head(gene)
 
 sigDEG = rld_10 %>%
   left_join(gene) %>%
@@ -233,7 +221,7 @@ sigDEG = rld_10 %>%
   dplyr::select(-Gene_ID) %>%
   drop_na() %>%
   dplyr::select(sort(current_vars()))
-#head(sigDEG)
+head(sigDEG)
 nrow(sigDEG)
 
 sigDEG_adj = rld_10_adj %>%
@@ -243,11 +231,11 @@ sigDEG_adj = rld_10_adj %>%
   dplyr::select(-Gene_ID) %>%
   drop_na() %>%
   dplyr::select(sort(current_vars()))
-#head(sigDEG)
+head(sigDEG_adj)
 nrow(sigDEG_adj)
 ```
 
-#Make a heatmap of all the differentially expressed genes (DEGs) of both the less stringent (pval) and more stringent (padj) conditions.
+- Make a heatmap of all the differentially expressed genes (DEGs) of both the less stringent (pval) and more stringent (padj) conditions.
 ```{r}
 col0=colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
 heatmap_sigDEG = heatmap.2(as.matrix(sigDEG), col = col0, Rowv = TRUE, Colv = TRUE, scale = "row",
@@ -263,7 +251,7 @@ heatmap_sigDEG = heatmap.2(as.matrix(sigDEG_adj), col = col0, Rowv = TRUE, Colv 
                            margin = c(10,15))
 ```
 
-#Make a GO table of the properly formatted isoforms and logfoldchange info for further analysis.
+- Make a GO table of the properly formatted isoforms and logfoldchange info for further analysis.
 ```{r}
 go_input_P2553 = cd %>%
   tibble::rownames_to_column(var = "iso") %>%
@@ -271,27 +259,27 @@ go_input_P2553 = cd %>%
   mutate(mutated_p_updown = ifelse(log2FoldChange < 0, mutated_p*-1, mutated_p*1)) %>%
   na.omit() %>%
   select(iso, mutated_p_updown)
-#head(go_input_P2553)
+head(go_input_P2553)
 colnames(go_input_P2553) <- c("gene", "pval")
 head(go_input_P2553)
 write.csv(go_input_P2553, file="P2553_GO.csv", quote=F, row.names=FALSE)
 ```
 
-#GO enrichment. Repeat for each goDivison: either MF, or BP, or CC.
-```{r}
+- GO term enrichment analysis. Repeat for each goDivision: either MF, or BP, or CC.
+```{r, warning=FALSE}
 input="P2553_GO.csv"
 goAnnotations="davies_cladeC_iso2go.tab" 
-goDatabase="go-basic.obo"
-goDivision="MF"
+goDatabase="go.obo"
+goDivision_1="MF"
 source("gomwu.functions.R")
 
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-  perlPath="C:/Strawberry/perl/bin/perl.exe",
+gomwuStats(input, goDatabase, goAnnotations, goDivision_1,
+  perlPath="perl",
   largest=0.1,
 	smallest=5,
 	clusterCutHeight=0.25)
 
-results=gomwuPlot(input,goAnnotations,goDivision,
+results=gomwuPlot(input,goAnnotations,goDivision_1,
 	absValue=-log(0.05,10),
 	level1=0.1,
 	level2=0.05, 
@@ -304,20 +292,20 @@ results=gomwuPlot(input,goAnnotations,goDivision,
 results
 ```
 
-```{r}
+```{r, warning=FALSE}
 input="P2553_GO.csv"
 goAnnotations="davies_cladeC_iso2go.tab" 
-goDatabase="go-basic.obo"
-goDivision="BP"
+goDatabase="go.obo"
+goDivision_2="BP"
 source("gomwu.functions.R")
 
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-  perlPath="C:/Strawberry/perl/bin/perl.exe",
+gomwuStats(input, goDatabase, goAnnotations, goDivision_2,
+  perlPath="perl",
   largest=0.1,
 	smallest=5,
 	clusterCutHeight=0.25)
 
-results=gomwuPlot(input,goAnnotations,goDivision,
+results=gomwuPlot(input,goAnnotations,goDivision_2,
 	absValue=-log(0.05,10),
 	level1=0.1,
 	level2=0.05, 
@@ -330,20 +318,20 @@ results=gomwuPlot(input,goAnnotations,goDivision,
 results
 ```
 
-```{r}
+```{r, warning=FALSE}
 input="P2553_GO.csv"
 goAnnotations="davies_cladeC_iso2go.tab" 
-goDatabase="go-basic.obo"
-goDivision="CC"
+goDatabase="go.obo"
+goDivision_3="CC"
 source("gomwu.functions.R")
 
-gomwuStats(input, goDatabase, goAnnotations, goDivision,
-  perlPath="C:/Strawberry/perl/bin/perl.exe",
+gomwuStats(input, goDatabase, goAnnotations, goDivision_3,
+  perlPath="perl",
   largest=0.1,
 	smallest=5,
 	clusterCutHeight=0.25)
 
-results=gomwuPlot(input,goAnnotations,goDivision,
+results=gomwuPlot(input,goAnnotations,goDivision_3,
 	absValue=-log(0.05,10),
 	level1=0.1,
 	level2=0.05, 
@@ -357,5 +345,5 @@ results
 ```
 
 
-##Conclusion
-Our analysis of differetially expressed genes in Clade C Symbiodiniaceae *in hospite* under extreme ocean acidification conditions revealed provides insight into the cellular response of the symbiont under acidification stress. Upon stringent analysis of differentially expressed genes revealed 14 genes upregulated and 3 genes downregulated. From analysis of the enriched cellular compartment (CC) GO terms, we identified the mitochondria as an important regulator of the acidification stress response in Clade C Symbiodiniaceae *in hospite.* In agreement with the Davies et al., 2018 paper upon which we based this study, gene expression (under stringent analysis) does not vary greatly within the symbiont under acidification stress. This may be due to the fact that the symbiont responds on a physiological level, adjusting macromolecule function instead transcriptional regulation, which is in contrast to what researchers have observed in the host under acidification stress.
+## Conclusion
+Our analysis of differetially expressed genes in Clade C Symbiodiniaceae *in hospite* under extreme ocean acidification conditions revealed provides insight into the cellular response of the symbiont under acidification stress. Upon stringent analysis of differentially expressed genes revealed 14 genes upregulated and 3 genes downregulated. From analysis of the enriched cellular compartment (CC) GO terms, we identified the mitochondria as an important regulator of the acidification stress response in Clade C Symbiodiniaceae *in hospite.* In agreement with the Davies et al., 2018 paper upon which we based this study, gene expression (under stringent analysis) does not vary greatly within the symbiont under acidification stress. This may be due to the fact that the symbiont responds on a physiological level, adjusting macromolecule function instead of transcriptional regulation, which is in contrast to what researchers have observed in the host under acidification stress.
